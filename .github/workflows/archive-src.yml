@@ -49,7 +49,7 @@ jobs:
           df -Th
           git clone http://github.com/unifreq/linux-6.1.y-rockchip
           mkdir -p /builder/release
-          tar -zcvf /builder/release/linux-6.1.y-rockchip.tar.gz linux-6.1.y-rockchip
+          tar -zcf /builder/release/linux-6.1.y-rockchip.tar.gz linux-6.1.y-rockchip
 
       - name: Upload targz to Release
         uses: ncipollo/release-action@main
