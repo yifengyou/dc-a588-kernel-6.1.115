@@ -1,0 +1,59 @@
+#==========================================================================
+# Description: Archive Kernel Source
+#==========================================================================
+
+name: Archive Kernel Source
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+
+
+env:
+  TZ: America/New_York
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialization environment
+        id: init
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi $(docker images -q) 2>/dev/null
+          [[ -n "${AGENT_TOOLSDIRECTORY}" ]] && sudo rm -rf "${AGENT_TOOLSDIRECTORY}"
+          sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android 2>/dev/null
+          sudo swapoff -a
+          sudo rm -f /swapfile /mnt/swapfile
+          sudo -E apt-get -y update
+          sudo -E apt-get -y install git
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Download and archive kernel source
+        run: |
+          sudo mkdir -p /builder
+          sudo chown -R runner.runner /builder
+          df -Th
+          git clone http://github.com/unifreq/linux-6.1.y-rockchip
+          mkdir -p /builder/release
+          tar -zcf /builder/release/linux-6.1.y-rockchip.tar.gz linux-6.1.y-rockchip
+
+      - name: Upload targz to Release
+        uses: ncipollo/release-action@main
+        if: ${{ steps.generate_rootfs.outputs.status }} == 'success' && !cancelled()
+        with:
+          tag: linux-6.1.y-rockchip
+          artifacts: /builder/release/*
+          allowUpdates: true
+          removeArtifacts: false
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            clone from http://github.com/unifreq/linux-6.1.y-rockchip
+
