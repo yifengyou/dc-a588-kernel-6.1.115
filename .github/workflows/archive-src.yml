@@ -15,16 +15,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        set_release: [ bullseye, bookworm, jammy, noble ]
-        set_desktop: [ cli, gnome, xfce ]
-        exclude:
-          - set_release: bullseye
-            set_desktop: gnome
-          - set_release: bullseye
-            set_desktop: xfce
 
     if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
     steps:
@@ -43,9 +33,8 @@ jobs:
           sudo rm -f /swapfile /mnt/swapfile
           sudo -E apt-get -y update
           sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
-          sudo -E apt-get -y install python2 python2-dev python-is-python3 squashfs-tools rar $(curl -fsSL https://tinyurl.com/ubuntu2204-build-armbian)
+          sudo -E apt-get -y install git
           sudo -E systemctl daemon-reload
-          #sudo -E apt-get -y full-upgrade
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
           sudo sed -i '/NVM_DIR/d;/skel/d' /root/{.bashrc,.profile}
@@ -53,7 +42,7 @@ jobs:
           sudo timedatectl set-timezone "${TZ}"
           echo "status=success" >> ${GITHUB_OUTPUT}
 
-      - name: Create build directory
+      - name: Download and archive kernel source
         run: |
           sudo mkdir -p /builder
           sudo chown -R runner.runner /builder
